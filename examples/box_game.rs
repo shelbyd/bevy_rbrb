@@ -4,8 +4,8 @@ use std::{net::SocketAddr, time::Duration};
 use structopt::*;
 
 use bevy_rbrb::{
-    BasicUdpSocket, Confirmed, PlayerId, PlayerInputs, RbrbAppExt, RbrbPlugin, RbrbTime, Session,
-    SessionBuilder,
+    BadSocket, BasicUdpSocket, Confirmed, PlayerId, PlayerInputs, RbrbAppExt, RbrbPlugin, RbrbTime,
+    Session, SessionBuilder,
 };
 
 #[derive(StructOpt)]
@@ -15,6 +15,9 @@ struct Options {
 
     #[structopt(long)]
     local_index: u16,
+
+    #[structopt(long)]
+    bad_network: bool,
 
     remote_players: Vec<SocketAddr>,
 }
@@ -27,21 +30,25 @@ struct BoxGameInput {
 fn main() {
     let options = Options::from_args();
 
-    let session = SessionBuilder::default()
+    let builder = SessionBuilder::default()
         .remote_players(&options.remote_players)
         .local_player(options.local_index)
         .step_size(Duration::from_millis(10))
         // TODO(shelbyd): Don't specify default input with typed input system. Requires matching
         // internal serialization.
-        .default_inputs(bincode::serialize(&BoxGameInput::default()).unwrap())
-        .with_socket(BasicUdpSocket::bind(options.local_port).unwrap())
-        .start()
-        .unwrap();
+        .default_inputs(bincode::serialize(&BoxGameInput::default()).unwrap());
+
+    let basic_socket = BasicUdpSocket::bind(options.local_port).unwrap();
+    let builder = if options.bad_network {
+        builder.with_socket(BadSocket::new(basic_socket))
+    } else {
+        builder.with_socket(basic_socket)
+    };
 
     App::build()
         .add_plugins(DefaultPlugins)
         .add_plugin(RbrbPlugin)
-        .with_session(session)
+        .with_session(builder.start().unwrap())
         .add_startup_system(spawn_players.system())
         .with_typed_input_system(capture_input.system())
         .update_rollback_schedule(|sched| {
