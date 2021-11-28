@@ -1,0 +1,12 @@
+[package]
+name = "bevy_rbrb"
+version = "0.1.0"
+edition = "2021"
+
+authors = ["Shelby Doolittle <shelby@shelbyd.com>"]
+description = "Bevy integration for RbRb"
+license = "MIT"
+repository = "https://github.com/shelbyd/bevy_rbrb"
+
+[dependencies]
+rbrb = { version = "0.1.0", git = "https://github.com/shelbyd/rbrb" }
