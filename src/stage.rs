@@ -30,12 +30,16 @@ impl RbrbStage {
                     .run(local_id, world);
                 *vec = inputs;
             }
-            Request::Advance { inputs, .. } => {
+            Request::Advance { inputs, amount, .. } => {
                 world.insert_resource(inputs);
+                world.insert_resource(crate::RbrbTime { delta: amount });
+
                 if let Some(s) = self.parse_inputs.as_mut() {
                     s.run(world);
                 }
                 self.schedule.run_once(world);
+
+                world.remove_resource::<crate::RbrbTime>();
                 world.remove_resource::<PlayerInputs>();
             }
 

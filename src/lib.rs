@@ -1,5 +1,6 @@
 use bevy_app::*;
 use bevy_ecs::{prelude::*, system::ExclusiveSystem};
+use std::time::Duration;
 
 pub use rbrb::*;
 
@@ -13,6 +14,10 @@ impl Plugin for RbrbPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_stage_before(CoreStage::Update, "rbrb_update", RbrbStage::new());
     }
+}
+
+pub struct RbrbTime {
+    pub delta: Duration,
 }
 
 pub trait RbrbAppExt {
@@ -75,7 +80,11 @@ fn serialize_inputs<I: serde::Serialize>(input: In<I>) -> Vec<u8> {
 }
 
 fn parse_inputs<I: serde::de::DeserializeOwned + Send + Sync + 'static>(world: &mut World) {
-    let player_inputs = world.get_resource::<PlayerInputs>().expect("should have specified PlayerInputs");
-    let parsed_inputs = player_inputs.clone().deep_map(|i| bincode::deserialize::<I>(&i).unwrap());
+    let player_inputs = world
+        .get_resource::<PlayerInputs>()
+        .expect("should have specified PlayerInputs");
+    let parsed_inputs = player_inputs
+        .clone()
+        .deep_map(|i| bincode::deserialize::<I>(&i).unwrap());
     world.insert_resource(parsed_inputs);
 }
