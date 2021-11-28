@@ -9,4 +9,15 @@ license = "MIT"
 repository = "https://github.com/shelbyd/bevy_rbrb"
 
 [dependencies]
-rbrb = { version = "0.1.0", git = "https://github.com/shelbyd/rbrb" }
+bevy_app = "0.5.0"
+bevy_ecs = "0.5.0"
+bincode = "1.3.3"
+log = "0.4.14"
+rbrb = { version = "0.1.0", path = "../rbrb" }
+serde = "1.0.130"
+
+[dev-dependencies]
+bevy = "0.5.0"
+bincode = "1.3.3"
+serde = { version = "1.0.130", features = ["derive"] }
+structopt = "0.3.25"
