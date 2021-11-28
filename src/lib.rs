@@ -1,5 +1,5 @@
 use bevy_app::*;
-use bevy_ecs::prelude::*;
+use bevy_ecs::{prelude::*, system::ExclusiveSystem};
 
 pub use rbrb::*;
 
@@ -25,6 +25,8 @@ pub trait RbrbAppExt {
         &mut self,
         system: impl IntoSystem<Params, S>,
     ) -> &mut Self;
+
+    fn update_rollback_schedule(&mut self, f: impl FnOnce(&mut Schedule)) -> &mut Self;
 }
 
 impl RbrbAppExt for AppBuilder {
@@ -44,33 +46,36 @@ impl RbrbAppExt for AppBuilder {
         let mut get_inputs = Box::new(system.system().chain(serialize_inputs.system()));
         get_inputs.initialize(self.world_mut());
 
-        let mut parse_inputs = Box::new(parse_inputs::<I>.system());
+        let mut parse_inputs = Box::new(parse_inputs::<I>.exclusive_system());
         parse_inputs.initialize(self.world_mut());
 
-        let stage = self
-            .app
-            .schedule
-            .get_stage_mut::<RbrbStage>(&"rbrb_update")
-            .expect("could not find RbrbStage, install RbrbPlugin");
-
+        let stage = get_rbrb_stage(self);
         stage.get_inputs = Some(get_inputs);
         stage.parse_inputs = Some(parse_inputs);
 
         self
     }
+
+    fn update_rollback_schedule(&mut self, f: impl FnOnce(&mut Schedule)) -> &mut Self {
+        f(&mut get_rbrb_stage(self).schedule);
+        self
+    }
+}
+
+fn get_rbrb_stage(builder: &mut AppBuilder) -> &mut RbrbStage {
+    builder
+        .app
+        .schedule
+        .get_stage_mut::<RbrbStage>(&"rbrb_update")
+        .expect("could not find RbrbStage, install RbrbPlugin")
 }
 
 fn serialize_inputs<I: serde::Serialize>(input: In<I>) -> Vec<u8> {
     bincode::serialize(&input.0).unwrap()
 }
 
-fn parse_inputs<I: serde::de::DeserializeOwned + Send + Sync + 'static>(
-    player_inputs: In<PlayerInputs>,
-    mut commands: Commands,
-) {
-    commands.insert_resource(
-        player_inputs
-            .0
-            .deep_map(|i| bincode::deserialize::<I>(&i).unwrap()),
-    );
+fn parse_inputs<I: serde::de::DeserializeOwned + Send + Sync + 'static>(world: &mut World) {
+    let player_inputs = world.get_resource::<PlayerInputs>().expect("should have specified PlayerInputs");
+    let parsed_inputs = player_inputs.clone().deep_map(|i| bincode::deserialize::<I>(&i).unwrap());
+    world.insert_resource(parsed_inputs);
 }

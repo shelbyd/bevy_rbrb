@@ -1,6 +1,14 @@
 use bevy_ecs::prelude::*;
 
-pub fn save_to(_vec: &mut Vec<u8>, _world: &mut World) {
-    // TODO(shelbyd): Implement.
-    log::warn!("not implemented: save_to");
+#[derive(Default)]
+pub struct Snapshotter {}
+
+impl Snapshotter {
+    pub fn save_to(&mut self, _vec: &mut Vec<u8>, _world: &mut World) {
+        log::warn!("Unimplemented: save_to");
+    }
+
+    pub fn load_from(&mut self, _slice: &[u8], _world: &mut World) {
+        log::warn!("Unimplemented: load_from");
+    }
 }

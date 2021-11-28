@@ -3,7 +3,9 @@ use serde::*;
 use std::{net::SocketAddr, time::Duration};
 use structopt::*;
 
-use bevy_rbrb::{BasicUdpSocket, PlayerId, RbrbAppExt, RbrbPlugin, SessionBuilder};
+use bevy_rbrb::{
+    BasicUdpSocket, Confirmed, PlayerId, PlayerInputs, RbrbAppExt, RbrbPlugin, SessionBuilder,
+};
 
 #[derive(StructOpt)]
 struct Options {
@@ -40,6 +42,11 @@ fn main() {
         .add_plugin(RbrbPlugin)
         .with_session(session)
         .with_typed_input_system(capture_input.system())
+        .update_rollback_schedule(|sched| {
+            sched
+                .add_stage("box_game", SystemStage::parallel())
+                .add_system_to_stage("box_game", move_boxes.system());
+        })
         .run()
 }
 
@@ -58,4 +65,14 @@ fn capture_input(_local_player_id: In<PlayerId>, keyboard: Res<Input<KeyCode>>) 
         input.direction.x += 1.;
     }
     input
+}
+
+fn move_boxes(
+    inputs: Res<PlayerInputs<Confirmed<BoxGameInput>>>,
+    mut boxes: Query<(&mut Transform, &PlayerId)>,
+) {
+    for (mut xform, player) in boxes.iter_mut() {
+        let input = inputs.get(player).expect("should have inputs for all players");
+        xform.translation += input.as_inner().direction.clamp_length_max(1.).extend(0.);
+    }
 }

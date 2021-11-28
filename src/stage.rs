@@ -1,20 +1,22 @@
-use bevy_ecs::prelude::*;
+use bevy_ecs::{prelude::*, system::ExclusiveSystem};
 use rbrb::*;
 
 use std::ops::ControlFlow;
 
 pub struct RbrbStage {
-    schedule: Schedule,
+    pub schedule: Schedule,
     pub get_inputs: Option<Box<dyn System<In = PlayerId, Out = Vec<u8>>>>,
-    pub parse_inputs: Option<Box<dyn System<In = PlayerInputs, Out = ()>>>,
+    pub parse_inputs: Option<Box<dyn ExclusiveSystem>>,
+    snapshotter: crate::snapshot::Snapshotter,
 }
 
 impl RbrbStage {
     pub fn new() -> Self {
         RbrbStage {
-            schedule: Default::default(),
+            schedule: Schedule::default(),
             get_inputs: None,
             parse_inputs: None,
+            snapshotter: Default::default(),
         }
     }
 
@@ -29,16 +31,19 @@ impl RbrbStage {
                 *vec = inputs;
             }
             Request::Advance { inputs, .. } => {
-                if let Some(s) = self.parse_inputs.as_mut() {
-                    s.run(inputs.clone(), world);
-                }
                 world.insert_resource(inputs);
+                if let Some(s) = self.parse_inputs.as_mut() {
+                    s.run(world);
+                }
                 self.schedule.run_once(world);
                 world.remove_resource::<PlayerInputs>();
             }
 
             Request::SaveTo(vec) => {
-                crate::snapshot::save_to(vec, world);
+                self.snapshotter.save_to(vec, world);
+            }
+            Request::LoadFrom(slice) => {
+                self.snapshotter.load_from(slice, world);
             }
 
             unhandled => {
