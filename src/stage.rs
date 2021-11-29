@@ -5,9 +5,9 @@ use std::ops::ControlFlow;
 
 pub struct RbrbStage {
     pub schedule: Schedule,
-    pub get_inputs: Option<Box<dyn System<In = PlayerId, Out = Vec<u8>>>>,
+    pub get_inputs: Option<Box<dyn System<In = (), Out = Vec<u8>>>>,
     pub parse_inputs: Option<Box<dyn ExclusiveSystem>>,
-    snapshotter: crate::snapshot::Snapshotter,
+    pub snapshotter: crate::snapshot::Snapshotter,
 }
 
 impl RbrbStage {
@@ -20,14 +20,14 @@ impl RbrbStage {
         }
     }
 
-    fn handle_request(&mut self, request: Request, world: &mut World, local_id: PlayerId) {
+    fn handle_request(&mut self, request: Request, world: &mut World) {
         match request {
             Request::CaptureLocalInput(vec) => {
                 let inputs = self
                     .get_inputs
                     .as_mut()
                     .expect("no input system provided")
-                    .run(local_id, world);
+                    .run((), world);
                 *vec = inputs;
             }
             Request::Advance { inputs, amount, .. } => {
@@ -43,12 +43,8 @@ impl RbrbStage {
                 world.remove_resource::<PlayerInputs>();
             }
 
-            Request::SaveTo(vec) => {
-                self.snapshotter.save_to(vec, world);
-            }
-            Request::LoadFrom(slice) => {
-                self.snapshotter.load_from(slice, world);
-            }
+            Request::SaveTo(vec) => self.snapshotter.save_to(vec, world),
+            Request::LoadFrom(slice) => self.snapshotter.load_from(slice, world),
 
             unhandled => {
                 unimplemented!("unhandled: {:?}", unhandled);
@@ -63,9 +59,8 @@ impl Stage for RbrbStage {
             Some(s) => s,
             None => return,
         };
-        let local_id = session.local_player_id();
         while let ControlFlow::Continue(()) = session.next_request(|request: Request<'_>| {
-            self.handle_request(request, world, local_id);
+            self.handle_request(request, world);
         }) {}
         world.insert_resource(session);
     }

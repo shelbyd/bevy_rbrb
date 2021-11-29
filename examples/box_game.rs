@@ -5,7 +5,7 @@ use structopt::*;
 
 use bevy_rbrb::{
     BadSocket, BasicUdpSocket, Confirmed, PlayerId, PlayerInputs, RbrbAppExt, RbrbPlugin, RbrbTime,
-    Session, SessionBuilder,
+    RollbackId, Session, SessionBuilder,
 };
 
 #[derive(StructOpt)]
@@ -45,12 +45,13 @@ fn main() {
         builder.with_socket(basic_socket)
     };
 
-    App::build()
+    App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(RbrbPlugin)
         .with_session(builder.start().unwrap())
         .add_startup_system(spawn_players.system())
-        .with_typed_input_system(capture_input.system())
+        .with_typed_input_system(capture_input)
+        .add_rollback_component::<Transform>()
         .update_rollback_schedule(|sched| {
             sched
                 .add_stage("box_game", SystemStage::parallel())
@@ -95,10 +96,11 @@ fn spawn_players(
                 transform,
                 ..Default::default()
             })
+            .insert(RollbackId(format!("player/{}", id)))
             .insert(Player { id });
     }
 
-    commands.spawn_bundle(LightBundle {
+    commands.spawn_bundle(PointLightBundle {
         transform: Transform::from_xyz(4.0, 8.0, 4.0),
         ..Default::default()
     });
@@ -108,7 +110,7 @@ fn spawn_players(
     });
 }
 
-fn capture_input(_local_player_id: In<PlayerId>, keyboard: Res<Input<KeyCode>>) -> BoxGameInput {
+fn capture_input(keyboard: Res<Input<KeyCode>>) -> BoxGameInput {
     let mut input = BoxGameInput::default();
     if keyboard.pressed(KeyCode::Up) {
         input.direction.y -= 1.;
@@ -138,6 +140,7 @@ fn move_boxes(
             .expect("should have inputs for all players")
             .as_inner();
         let movement = input.direction.clamp_length_max(1.) * speed * time.delta.as_secs_f32();
-        xform.translation += Vec3::new(movement.x, 0., movement.y);
+        xform.translation.x += movement.x;
+        xform.translation.z += movement.y;
     }
 }
