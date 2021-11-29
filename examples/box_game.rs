@@ -5,7 +5,7 @@ use structopt::*;
 
 use bevy_rbrb::{
     BadSocket, BasicUdpSocket, Confirmed, PlayerId, PlayerInputs, RbrbAppExt, RbrbPlugin, RbrbTime,
-    RollbackId, Session, SessionBuilder,
+    RollbackId, Session, SessionBuilder, SessionBuilderExt,
 };
 
 #[derive(StructOpt)]
@@ -34,9 +34,7 @@ fn main() {
         .remote_players(&options.remote_players)
         .local_player(options.local_index)
         .step_size(Duration::from_millis(10))
-        // TODO(shelbyd): Don't specify default input with typed input system. Requires matching
-        // internal serialization.
-        .default_inputs(bincode::serialize(&BoxGameInput::default()).unwrap());
+        .typed_default_inputs(BoxGameInput::default());
 
     let basic_socket = BasicUdpSocket::bind(options.local_port).unwrap();
     let builder = if options.bad_network {

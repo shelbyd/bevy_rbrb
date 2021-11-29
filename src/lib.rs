@@ -101,3 +101,13 @@ fn parse_inputs<I: serde::de::DeserializeOwned + Send + Sync + 'static>(world: &
         .deep_map(|i| bincode::deserialize::<I>(&i).unwrap());
     world.insert_resource(parsed_inputs);
 }
+
+pub trait SessionBuilderExt {
+    fn typed_default_inputs<I: Serialize>(self, i: I) -> Self;
+}
+
+impl SessionBuilderExt for SessionBuilder {
+    fn typed_default_inputs<I: Serialize>(self, i: I) -> Self {
+        self.default_inputs(bincode::serialize(&i).unwrap())
+    }
+}
