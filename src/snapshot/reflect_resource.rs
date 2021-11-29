@@ -1,4 +1,5 @@
-use bevy::{ecs::component::Component, prelude::*, reflect::FromType};
+use bevy_ecs::{prelude::*, component::Component};
+use bevy_reflect::{FromType, Reflect};
 
 #[derive(Clone)]
 pub(crate) struct ReflectResource {
