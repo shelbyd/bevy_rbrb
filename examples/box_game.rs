@@ -52,6 +52,7 @@ fn main() {
         .add_startup_system(spawn_players.system())
         .with_typed_input_system(capture_input)
         .add_rollback_component::<Transform>()
+        .add_rollback_component::<SomethingGeneric<u32>>()
         .update_rollback_schedule(|sched| {
             sched
                 .add_stage("box_game", SystemStage::parallel())
@@ -63,6 +64,9 @@ fn main() {
 struct Player {
     id: PlayerId,
 }
+
+#[derive(Reflect, Default)]
+struct SomethingGeneric<T: Reflect>(T);
 
 fn spawn_players(
     session: Res<Session>,
@@ -97,6 +101,7 @@ fn spawn_players(
                 ..Default::default()
             })
             .insert(RollbackId(format!("player/{}", id)))
+            .insert(SomethingGeneric::<u32>(42))
             .insert(Player { id });
     }
 

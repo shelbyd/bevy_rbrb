@@ -39,10 +39,10 @@ pub trait RegisterComponent: Component + GetTypeRegistration + Reflect + Default
 
 impl<T> RegisterComponent for T where T: Component + GetTypeRegistration + Reflect + Default {}
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
 struct ComponentName(pub String);
 
-#[derive(Default, Serialize, Deserialize)]
+#[derive(Default, Serialize, Deserialize, Debug)]
 struct Snapshot {
     entities: BTreeMap<RollbackId, BTreeMap<ComponentName, Vec<u8>>>,
 }
@@ -123,7 +123,9 @@ impl Snapshot {
                     let bson = bson::from_slice(&data).unwrap();
                     let de = bson::Deserializer::new(bson);
                     let world_registry = world.get_resource::<TypeRegistryArc>().unwrap().read();
-                    ReflectDeserializer::new(&world_registry).deserialize(de).unwrap()
+                    ReflectDeserializer::new(&world_registry)
+                        .deserialize(de)
+                        .unwrap()
                 });
             match (world.entity(entity).contains_type_id(type_id), component) {
                 (true, Some(c)) => {

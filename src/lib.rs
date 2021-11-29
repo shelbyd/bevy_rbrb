@@ -26,7 +26,7 @@ pub struct RbrbTime {
     pub delta: Duration,
 }
 
-#[derive(Default, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize, Serialize, Clone)]
+#[derive(Default, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize, Serialize, Clone, Debug)]
 #[serde(transparent)]
 pub struct RollbackId(pub String);
 
