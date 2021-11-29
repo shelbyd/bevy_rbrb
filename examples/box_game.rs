@@ -43,14 +43,16 @@ fn main() {
         builder.with_socket(basic_socket)
     };
 
-    App::new()
+    App::build()
         .add_plugins(DefaultPlugins)
         .add_plugin(RbrbPlugin)
         .with_session(builder.start().unwrap())
         .add_startup_system(spawn_players.system())
-        .with_typed_input_system(capture_input)
+        .with_typed_input_system(capture_input.system())
         .add_rollback_component::<Transform>()
         .add_rollback_component::<SomethingGeneric<u32>>()
+        .init_resource::<SomeResource>()
+        .add_rollback_resource::<SomeResource>()
         .update_rollback_schedule(|sched| {
             sched
                 .add_stage("box_game", SystemStage::parallel())
@@ -65,6 +67,11 @@ struct Player {
 
 #[derive(Reflect, Default)]
 struct SomethingGeneric<T: Reflect>(T);
+
+#[derive(Reflect, Default)]
+struct SomeResource {
+    score: u32,
+}
 
 fn spawn_players(
     session: Res<Session>,
@@ -103,7 +110,7 @@ fn spawn_players(
             .insert(Player { id });
     }
 
-    commands.spawn_bundle(PointLightBundle {
+    commands.spawn_bundle(LightBundle {
         transform: Transform::from_xyz(4.0, 8.0, 4.0),
         ..Default::default()
     });

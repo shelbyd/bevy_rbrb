@@ -9,10 +9,10 @@ license = "MIT"
 repository = "https://github.com/shelbyd/bevy_rbrb"
 
 [dependencies]
-bevy = { version = "0.5.0", git = "https://github.com/bevyengine/bevy", rev = "98a08cf4958c7b045d1d90d7c8714102198c413f" }
-bevy_app = { version = "0.5.0", git = "https://github.com/bevyengine/bevy", rev = "98a08cf4958c7b045d1d90d7c8714102198c413f"  }
-bevy_ecs = { version = "0.5.0", git = "https://github.com/bevyengine/bevy", rev = "98a08cf4958c7b045d1d90d7c8714102198c413f"  }
-bevy_reflect = { version = "0.5.0", git = "https://github.com/bevyengine/bevy", rev = "98a08cf4958c7b045d1d90d7c8714102198c413f"  }
+bevy = "0.5.0"
+bevy_app = "0.5.0"
+bevy_ecs = "0.5.0"
+bevy_reflect = "0.5.0"
 bincode = "1.3.3"
 bson = "2.0.1"
 log = "0.4.14"
