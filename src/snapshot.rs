@@ -8,6 +8,8 @@ use std::collections::BTreeMap;
 
 use crate::RollbackId;
 
+mod reflect_component;
+use reflect_component::ReflectComponent;
 mod reflect_resource;
 use reflect_resource::ReflectResource;
 
@@ -176,9 +178,7 @@ impl Snapshot {
             match (world.entity(entity).contains_type_id(type_id), component) {
                 (true, Some(c)) => reflect.apply_component(world, entity, &*c),
                 (false, Some(c)) => reflect.add_component(world, entity, &*c),
-                // TODO(shelbyd): Use bevy 0.5.0 with custom ReflectComponent.
-                // reflect.remove_component(world, entity);
-                (true, None) => unimplemented!("remove_component"),
+                (true, None) => reflect.remove_component(world, entity),
                 (false, None) => {}
             }
         }
