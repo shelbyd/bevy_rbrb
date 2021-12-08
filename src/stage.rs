@@ -34,17 +34,20 @@ impl RbrbStage {
                 inputs,
                 amount,
                 confirmed,
+                current_frame,
                 ..
             } => {
                 world.insert_resource(inputs);
                 world.insert_resource(crate::RbrbTime { delta: amount });
                 world.insert_resource(confirmed);
+                world.insert_resource(crate::event::RbrbFrame(current_frame));
 
                 if let Some(s) = self.parse_inputs.as_mut() {
                     s.run(world);
                 }
                 self.schedule.run_once(world);
 
+                world.remove_resource::<crate::event::RbrbFrame>();
                 world.remove_resource::<rbrb::Confirmation>();
                 world.remove_resource::<crate::RbrbTime>();
                 world.remove_resource::<PlayerInputs>();
