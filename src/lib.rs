@@ -9,6 +9,8 @@ use std::time::Duration;
 
 pub use rbrb::*;
 
+mod event;
+pub use event::{Confirmed, NetworkEventWriter, Unconfirmed};
 mod snapshot;
 pub use snapshot::{RegisterComponent, RegisterResource};
 mod stage;
@@ -44,6 +46,8 @@ pub trait RbrbAppExt {
     fn update_rollback_schedule(&mut self, f: impl FnOnce(&mut Schedule)) -> &mut Self;
     fn add_rollback_component<T: RegisterComponent>(&mut self) -> &mut Self;
     fn add_rollback_resource<T: RegisterResource>(&mut self) -> &mut Self;
+
+    fn add_network_event<T: Send + Sync + 'static>(&mut self) -> &mut Self;
 }
 
 impl RbrbAppExt for AppBuilder {
@@ -85,6 +89,12 @@ impl RbrbAppExt for AppBuilder {
 
     fn add_rollback_resource<T: RegisterResource>(&mut self) -> &mut Self {
         get_rbrb_stage(self).snapshotter.register_resource::<T>();
+        self
+    }
+
+    fn add_network_event<T: Send + Sync + 'static>(&mut self) -> &mut Self {
+        self.add_event::<event::Confirmed<T>>();
+        self.add_event::<event::Unconfirmed<T>>();
         self
     }
 }

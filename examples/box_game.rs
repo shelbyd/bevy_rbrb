@@ -4,8 +4,8 @@ use std::{net::SocketAddr, time::Duration};
 use structopt::*;
 
 use bevy_rbrb::{
-    BadSocket, BasicUdpSocket, Confirmed, PlayerId, PlayerInputs, RbrbAppExt, RbrbPlugin, RbrbTime,
-    RollbackId, Session, SessionBuilder, SessionBuilderExt,
+    BadSocket, BasicUdpSocket, ConfirmationStatus, PlayerId, PlayerInputs, RbrbAppExt, RbrbPlugin,
+    RbrbTime, RollbackId, Session, SessionBuilder, SessionBuilderExt,
 };
 
 #[derive(StructOpt)]
@@ -138,7 +138,7 @@ fn capture_input(keyboard: Res<Input<KeyCode>>) -> BoxGameInput {
 }
 
 fn move_boxes(
-    inputs: Res<PlayerInputs<Confirmed<BoxGameInput>>>,
+    inputs: Res<PlayerInputs<ConfirmationStatus<BoxGameInput>>>,
     time: Res<RbrbTime>,
     mut boxes: Query<(&mut Transform, &Player)>,
 ) {

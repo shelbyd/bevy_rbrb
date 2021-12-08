@@ -95,9 +95,7 @@ impl Snapshot {
                         Some(c) => c,
                         None => continue,
                     };
-                    let world_registry = world.get_resource::<TypeRegistryArc>().unwrap().read();
-                    let serializer = ReflectSerializer::new(component, &world_registry);
-                    let serialized = bson::to_vec(&serializer).unwrap();
+                    let serialized = serialize_reflect(component, world);
                     self.entities
                         .entry(rollback.clone())
                         .or_default()
@@ -126,9 +124,7 @@ impl Snapshot {
                 Some(r) => r,
                 None => continue,
             };
-            let world_registry = world.get_resource::<TypeRegistryArc>().unwrap().read();
-            let serializer = ReflectSerializer::new(resource, &world_registry);
-            let serialized = bson::to_vec(&serializer).unwrap();
+            let serialized = serialize_reflect(resource, world);
             self.resources
                 .insert(ComponentName(component_name.to_owned()), serialized);
         }
@@ -167,14 +163,7 @@ impl Snapshot {
 
             let component = components
                 .remove(&ComponentName(registration.name().to_string()))
-                .map(|data| {
-                    let bson = bson::from_slice(&data).unwrap();
-                    let de = bson::Deserializer::new(bson);
-                    let world_registry = world.get_resource::<TypeRegistryArc>().unwrap().read();
-                    ReflectDeserializer::new(&world_registry)
-                        .deserialize(de)
-                        .unwrap()
-                });
+                .map(|data| deserialize_reflect(&data, world));
             match (world.entity(entity).contains_type_id(type_id), component) {
                 (true, Some(c)) => reflect.apply_component(world, entity, &*c),
                 (false, Some(c)) => reflect.add_component(world, entity, &*c),
@@ -191,14 +180,7 @@ impl Snapshot {
             let resource = self
                 .resources
                 .remove(&ComponentName(registration.name().to_string()))
-                .map(|data| {
-                    let bson = bson::from_slice(&data).unwrap();
-                    let de = bson::Deserializer::new(bson);
-                    let world_registry = world.get_resource::<TypeRegistryArc>().unwrap().read();
-                    ReflectDeserializer::new(&world_registry)
-                        .deserialize(de)
-                        .unwrap()
-                });
+                .map(|data| deserialize_reflect(&data, world));
             match (reflect.reflect_resource(world), resource) {
                 (Some(_), Some(res)) => reflect.apply_resource(world, &*res),
                 (None, Some(res)) => reflect.add_resource(world, &*res),
@@ -207,4 +189,19 @@ impl Snapshot {
             }
         }
     }
+}
+
+fn serialize_reflect(reflect: &dyn Reflect, world: &World) -> Vec<u8> {
+    let world_registry = world.get_resource::<TypeRegistryArc>().unwrap().read();
+    let serializer = ReflectSerializer::new(reflect, &world_registry);
+    bson::to_vec(&serializer).unwrap()
+}
+
+fn deserialize_reflect(data: &[u8], world: &World) -> Box<dyn Reflect + 'static> {
+    let bson = bson::from_slice(data).unwrap();
+    let de = bson::Deserializer::new(bson);
+    let world_registry = world.get_resource::<TypeRegistryArc>().unwrap().read();
+    ReflectDeserializer::new(&world_registry)
+        .deserialize(de)
+        .unwrap()
 }

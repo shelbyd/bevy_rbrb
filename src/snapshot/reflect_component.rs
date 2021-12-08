@@ -14,7 +14,6 @@ pub struct ReflectComponent {
     apply_component: fn(&mut World, Entity, &dyn Reflect),
     remove_component: fn(&mut World, Entity),
     reflect_component: fn(&World, Entity) -> Option<&dyn Reflect>,
-    copy_component: fn(&World, &mut World, Entity, Entity),
 }
 
 impl ReflectComponent {
@@ -53,14 +52,6 @@ impl<C: Component + Reflect + FromWorld> FromType<C> for ReflectComponent {
             },
             remove_component: |world, entity| {
                 world.entity_mut(entity).remove::<C>();
-            },
-            copy_component: |source_world, destination_world, source_entity, destination_entity| {
-                let source_component = source_world.get::<C>(source_entity).unwrap();
-                let mut destination_component = C::from_world(destination_world);
-                destination_component.apply(source_component);
-                destination_world
-                    .entity_mut(destination_entity)
-                    .insert(destination_component);
             },
             reflect_component: |world, entity| {
                 world

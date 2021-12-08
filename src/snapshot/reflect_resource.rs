@@ -1,4 +1,4 @@
-use bevy_ecs::{prelude::*, component::Component};
+use bevy_ecs::{component::Component, prelude::*};
 use bevy_reflect::{FromType, Reflect};
 
 #[derive(Clone)]
